@@ -569,7 +569,8 @@ don't derive `Copy` or `Clone` for it.
         ]
     incompleteTypes = outputIncomplete output `Set.difference` completeTypes
     incompleteItems =
-        [ Rust.Item [] Rust.Public (Rust.Enum name [])
+        let attrs = [ Rust.Attribute "allow(non_camel_case_types)" ] in
+        [ Rust.Item attrs Rust.Public (Rust.Enum name [])
         | name <- Set.toList incompleteTypes
         ]
 ```
