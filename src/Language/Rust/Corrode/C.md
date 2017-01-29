@@ -569,7 +569,7 @@ don't derive `Copy` or `Clone` for it.
         ]
     incompleteTypes = outputIncomplete output `Set.difference` completeTypes
     incompleteItems =
-        [ Rust.Item [] Rust.Private (Rust.Enum name [])
+        [ Rust.Item [] Rust.Public (Rust.Enum name [])
         | name <- Set.toList incompleteTypes
         ]
 ```
