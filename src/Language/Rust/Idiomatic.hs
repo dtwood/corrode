@@ -33,6 +33,7 @@ tailBlock :: Rust.Block -> Rust.Block
 tailBlock (Rust.Block b (Just (tailExpr -> Just e))) = Rust.Block b e
 -- If there's no final expression but the final statement consists of an
 -- expression that makes sense in the tail position, move it.
+tailBlock (Rust.Block (unsnoc -> Just (b, Rust.Stmt (tailExpr -> Just (Just (Rust.BlockExpr (Rust.Block stmts ret)))))) Nothing) = Rust.Block (b ++ stmts) ret
 tailBlock (Rust.Block (unsnoc -> Just (b, Rust.Stmt (tailExpr -> Just e))) Nothing) = Rust.Block b e
 -- Otherwise, leave this block unchanged.
 tailBlock b = b

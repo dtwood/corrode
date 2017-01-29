@@ -2933,6 +2933,7 @@ castTo target (Result { resultType = IsArray mut _ el, result = source }) =
         Rust.Immutable -> "as_ptr"
         Rust.Mutable -> "as_mut_ptr"
 castTo IsBool source = toBool source
+castTo target Result { resultType = ty, resultMutable = mut, result = (Rust.BlockExpr (Rust.Block statements (Just tail_))) } = Rust.BlockExpr (Rust.Block statements (Just (castTo target Result {resultType = ty, resultMutable = mut, result = tail_})))
 castTo target source = Rust.Cast (result source) (toRustType target)
 ```
 
