@@ -291,7 +291,7 @@ instance Pretty Expr where
         go _   d (Deref     e) = unary     d 12 "*" e
         go _   d (Not       e) = unary     d 12 "!" e
         go _   d (Borrow m  e) = unary     d 12 (case m of Immutable -> "&"; Mutable -> "&mut ") e
-        go pos d (Cast   e t) = maybeParens (d > 11) (go (left pos) 11 e <+> text "as" <+> parens (pPrint t))
+        go pos d (Cast   e t) = maybeParens (d > 11) (go (left pos) 11 e <+> text "as" <+> pPrint t)
         go pos d (Mul    a b) = binary pos d 10 a "*" b
         go pos d (Div    a b) = binary pos d 10 a "/" b
         go pos d (Mod    a b) = binary pos d 10 a "%" b
