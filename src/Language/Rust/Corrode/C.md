@@ -1272,15 +1272,30 @@ interpretFunction :: CFunDef -> EnvMonad s ()
 interpretFunction (CFunDef specs declr@(CDeclr mident _ _ _ _) argtypes body _) = do
 ```
 
+There are some functions that are defined as inline but not static in the macOS
+header files, but that don't actually need to be emitted as public.
+
+```haskell
+    let system_header_functions = ["__sputc", "__sigbits"]
+```
+
 Determine whether the function should be visible outside this module
 based on whether it is declared `static`.
 
 ```haskell
+    ident <- case mident of
+        Nothing -> badSource declr "anonymous function definition"
+        Just ident -> return ident
+
+    let name = applyRenames ident
+
     (storage, baseTy) <- baseTypeOf specs
-    (attrs, vis) <- case storage of
-        Nothing -> return ([Rust.Attribute "no_mangle"], Rust.Public)
-        Just (CStatic _) -> return ([], Rust.Private)
-        Just s -> badSource s "storage class specifier for function"
+    (attrs, vis) <- if elem name system_header_functions
+        then return ([], Rust.Private)
+        else case storage of
+            Nothing -> return ([Rust.Attribute "no_mangle"], Rust.Public)
+            Just (CStatic _) -> return ([], Rust.Private)
+            Just s -> badSource s "storage class specifier for function"
 ```
 
 Note that `const` is legal but meaningless on the return type of a
@@ -1288,7 +1303,7 @@ function in C. We just ignore whether it was present; there's no place
 we can put a `mut` keyword in the generated Rust.
 
 ```haskell
-    let go name funTy = do
+    let go funTy = do
 ```
 
 Definitions of variadic functions are not allowed because Rust does not
@@ -1366,11 +1381,6 @@ Add this function to the globals before evaluating its body so recursive
 calls work. (Note that function definitions can't be anonymous.)
 
 ```haskell
-    ident <- case mident of
-        Nothing -> badSource declr "anonymous function definition"
-        Just ident -> return ident
-
-    let name = applyRenames ident
     let funTy itype = typeToResult itype (Rust.Path (Rust.PathSegments [name]))
     deferred <- fmap (fmap funTy) (derivedDeferredTypeOf baseTy declr argtypes)
     alreadyUsed <- lift $ gets (usedForwardRefs . globalState)
@@ -1378,13 +1388,13 @@ calls work. (Note that function definitions can't be anonymous.)
         Rust.Private | ident `Set.notMember` alreadyUsed -> do
             action <- runOnce $ do
                 ty <- deferred
-                go name (resultType ty)
+                go (resultType ty)
                 return ty
             addSymbolIdentAction ident action
         _ -> do
             ty <- deferred
             addSymbolIdentAction ident $ return ty
-            go name (resultType ty)
+            go (resultType ty)
 ```
 
 
